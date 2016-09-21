@@ -1,0 +1,477 @@
+<html lang="en"><head>
+    <meta charset="UTF-8">
+    <title>画板</title>
+<style>
+    *{
+	padding:0;
+	margin:0;
+}
+*:active{
+	cursor:pointer;
+}
+li{
+	list-style-type:none;
+}
+#drawing_board{
+	width:100%;
+	border-bottom:1px solid #ddd;
+	background:#f7f7f7;
+	display:flex;
+}
+#drawing_board ul{
+	width:60%;
+	margin:0 auto;
+	display:flex;
+}
+#drawing_board ul li{
+	padding:15px;
+	margin-left:8px;
+}
+#drawing_board ul li:hover{
+	cursor:pointer;
+	background:#eee;
+    height: 13px;
+    margin-top: 2px;
+    border-radius: 5px;
+}
+.this_color_box{
+	width:15%;
+}
+.this_color{
+    background: #ccc;
+    width: 40px;
+    margin:15px auto;
+    height: 15px;
+    border: 1px solid #fff;
+    transition: 0.3s all;
+}
+.this_color:hover{
+	box-shadow:0 0 5px #bbb;
+}
+.this_color .this_color_input{
+		position:absolute;
+		opacity:0;
+		margin-top:-5px;
+		margin-left:-3px;
+}	
+.active_li,.active_li:hover{
+	background:#ff6363!important;
+    color: #fff;
+    font-size: 15px;
+    height: 13px;
+    margin-top: 2px;
+    font-weight: bold;
+    border-radius: 5px;
+}
+.drawing_board_pager{
+	width:100%;
+
+}
+.drawing_line{
+	width:0px;
+	height:1px;
+	position:absolute;
+	-webkit-transform-origin:0 0;
+	-moz-transform-origin:0 0;
+	-o-transform-origin:0 0;
+}
+.drawing_pen{
+	width:0px;
+	height:0px;
+	position:absolute;
+	box-shadow:0px 0px 1px 1px #fff;
+}
+.drawing_circular{
+	width:5px;
+	height:5px;
+	border-radius:100%;
+	background:#000;
+	position:absolute;
+}
+.drawing_circular2{
+	width:5px;
+	height:5px;
+	border-radius:100%;
+	border:1px solid #000;
+	position:absolute;
+}
+.drawing_square{
+	width:5px;
+	height:5px;
+	background:#000;
+	position:absolute;
+}
+.drawing_square2{
+	width:5px;
+	height:5px;
+	border:1px solid #000;
+	position:absolute;
+}
+.drawing_board_pager .hover:after{
+	content: '';
+    border: 2px solid red;
+    width: 101%;
+    position: absolute;
+    top: -1%;
+    left: -1%;
+    border-radius: 2%;
+    height: 101%;
+}
+.fakeBox{
+	z-index: -1;
+}
+.tool_weight_box{
+	width:25%;
+	text-align: center;
+}
+.tool_weight_box span{
+	font-size: 13px;
+    position: absolute;
+    margin-top: 17px;
+    color: #464646;
+    margin-left: -120px;
+}
+.tool_weight_box .tool_weight{
+    margin: 23px auto;
+    width: 100px;
+    height: 2px;
+    background: #888888;
+    position:relative;
+}
+.tool_weight_box .tool_weight i{
+    width: 16px;
+    height: 16px;
+    top: -7px;
+    left: 0px;
+    position: absolute;
+    border-radius: 100%;
+    display: inline-block;
+    background: #000;
+}
+</style>
+</head>
+<body>
+    <div id="drawing_board">
+       <div class="this_color_box"><div class="this_color" style="background: rgb(0, 0, 0);"><input class="this_color_input" onchange="color_change()" type="color"></div></div>
+            <ul class="drawing_board_tool">
+                <li class="active_li">笔</li>
+                <li>线</li>
+                <li>圆</li>
+                <li>椭圆</li>
+                <li>正方形</li>
+                <li>长方形</li>
+                <li>橡皮</li>
+                <li>移动</li>
+            </ul>
+        <div class="tool_weight_box">
+            <span>粗细调节</span><div class="tool_weight"><i></i></div>
+        </div>
+    </div>
+    <div class="drawing_board_pager" style="height: 613px;">
+            
+    </div>
+
+<script src="js/jquery.min.js"></script>
+<script>
+    //js
+
+var color = null;
+
+$(document).ready(function (){
+		var the_color = $('.this_color_input').val();
+		$('.this_color').css("background",the_color);
+		color = the_color
+});
+//获取选中的颜色
+function color_change(){
+	var the_color = $('.this_color_input').val();
+	$('.this_color').css("background",the_color);
+	color = the_color;
+}
+
+
+//li的active切换
+$('.drawing_board_tool li').click(function (){
+	$('.drawing_board_tool li').removeClass('active_li');
+	$(this).addClass('active_li');
+});
+
+//自适应画纸高度
+var h = document.documentElement.clientHeight;
+$('.drawing_board_pager').css("height",(h-$('.drawing_board_tool').height()-2))
+
+//粗细调节
+var all_weight = 1;
+var toolWeight = $(".tool_weight")[0];
+var toolWeightI = $(".tool_weight i")[0];
+toolWeightI.onmousedown=function (){
+	var tool = toolWeight.offsetWidth;
+	document.onmousemove=function(ev){
+		var oEvent = ev||event;
+		var x = oEvent.clientX-toolWeight.offsetLeft-8;
+		if(x<=0){
+			x=0;
+		}
+		if(x>=95){
+			x=95;
+		}
+		$(toolWeightI).css("left",x)
+		all_weight = (x+10)/10;
+	}
+	document.onmouseup=function (){
+		document.onmousemove = null;
+	}
+}
+
+		
+
+//TAB
+var page = $('.drawing_board_pager')[0];
+	setInterval(function (){
+		if($('.active_li').html()== '笔'){
+			page.onmousedown=function (){
+				pen_func(page)
+ 			}
+		}
+		else if($('.active_li').html()== '线'){
+			page.onmousedown=function (){
+				line_func(page)
+ 			}
+		}
+		else if($('.active_li').html()== '圆'){
+			page.onmousedown=function (){
+				circular_func(page,"1")
+			}
+		}
+		else if($('.active_li').html()== '椭圆'){
+			page.onmousedown=function (){
+				circular_func(page,"2")
+			}
+		}
+		else if($('.active_li').html()== '正方形'){
+			page.onmousedown=function (){
+				circular_func(page,"1",true)
+			}
+		}
+		else if($('.active_li').html()== '长方形'){
+			page.onmousedown=function (){
+				circular_func(page,"2",true)
+			}
+		}
+		else if($('.active_li').html()== '橡皮'){
+			page.onmousedown=null;
+			$('.drawing_board_pager div').click(function (){
+				$(this).remove();
+			});
+		}
+		else if($('.active_li').html()== '移动'){
+			page.onmousedown=null;
+			Drag_func();
+		}
+	},50)
+
+//拖拽
+function Drag_func(ev){
+	var oEvent = ev||event;
+	var pagesDiv = $('.drawing_board_pager div');
+	for(var i=0;i<pagesDiv.length;i++)
+	{
+		pagesDiv[i].onmouseover=function (){
+			$(this).addClass("hover");
+			$(this).mousedown(function (ev){
+				$(this).addClass("ali");
+					var this_view = $(this).clone();
+					$(this_view).css({
+						"width":($(this_view).width()+10),
+						"height":($(this_view).height()+10),
+						"background":"none",
+						"border":"1px dashed #000",
+						"margin-left":"-5px",
+						"margin-top":"-5px",
+					});
+					$(this_view).addClass("fakeBox");
+					$("body").append(this_view);
+					$(this).removeClass("hover");
+
+					document.onmousemove=function (ev){
+						var oEvent = ev||event;
+						var x = oEvent.clientX-($('.fakeBox').width()/2);
+						var y = oEvent.clientY-($('.fakeBox').height()/2);
+						$('.fakeBox').css({
+							"left":x,
+							"top":y,
+						})
+					};
+
+				});
+				document.onmouseup=function (){
+					document.onmousemove = null;
+					$('.ali').css({
+						"left":($('.fakeBox').css('left')),
+						"top":($('.fakeBox').css('top')),
+					})
+					this_x = $('.fakeBox').css('left');
+					this_y = $('.fakeBox').css('top');
+					$('.drawing_board_pager div').removeClass("ali");
+					$('.fakeBox').remove();
+				}
+
+
+			this.onmouseout=function (){
+				$(this).removeClass("hover")
+			}
+		};
+	}
+}
+
+ //线方法
+ function line_func(obj,ev){
+ 		var oEvent = ev||event;
+ 		var x = oEvent.clientX;
+ 		var y = oEvent.clientY;
+ 		var divs = obj.getElementsByTagName('div');
+ 		var div = document.createElement('div');
+ 		div.className = "drawing_line";
+ 		div.style.left = x+'px';
+ 		div.style.top = y+'px';
+		if(divs.length>0){
+			obj.insertBefore(div,divs[0]);
+		}
+		else{
+			obj.appendChild(div);
+		}
+
+ 	obj.onmousemove=function (ev){
+ 		var div = document.getElementsByClassName('drawing_line')[0];
+ 		var oEvent = ev||event;
+ 		var x = oEvent.clientX-div.offsetLeft;
+ 		var y = (oEvent.clientY-div.offsetTop)*0.5   //算法有问题
+ 		div.style.width = x+'px';
+ 		div.style.height = all_weight+'px';
+ 		if(!oEvent.ctrlKey){
+			$(div).css({
+			  "-webkit-transform":"rotate("+y+"deg)",
+			  "-moz-transform":"rotate("+y+"deg)",
+			  "-o-transform":"rotate("+y+"deg)",
+			  })
+ 		}
+ 		div.style.background = color;
+ 	}
+
+ 	obj.onmouseup=function (){
+ 		obj.onmousemove = null;
+ 	}
+ 
+}
+
+var shadows = null;
+//笔方法
+function pen_func(obj,ev){	
+	var oEvent = ev||event;
+	var div = document.createElement('div');
+	var divs = obj.getElementsByTagName('div');
+	div.className = "drawing_pen";
+	obj.appendChild(div);
+
+	obj.onmousemove=function (ev){
+		var oEvent = ev||event;
+		var div = document.getElementsByClassName('drawing_pen')[0];
+		var x = oEvent.clientX;
+		var y = oEvent.clientY-50;
+		if(shadows==null){	
+			shadows = x+"px "+y+"px 1px "+all_weight+"px "+color;
+		}
+		else{
+			shadows += ","+x+"px "+y+"px 1px "+all_weight+"px "+color;
+		}
+		div.style.boxShadow = shadows;
+	obj.onmouseup=function (){
+			obj.onmousemove = null;
+		}
+	}
+} 
+
+//方和圆形方法
+function circular_func(obj,type,square,ev){
+		var oEvent = ev||event;
+ 		var x = oEvent.clientX-4;
+ 		var y = oEvent.clientY-4;
+ 		var divs = obj.getElementsByTagName('div');
+ 		if(oEvent.ctrlKey){
+ 			var circle = document.createElement('div');
+ 			if(square==true){
+				circle.className = "drawing_square2";
+ 			}else{
+ 				circle.className = "drawing_circular2";
+ 			}
+ 			circle.style.left = x+'px';
+	 		circle.style.top = y+'px';
+			if(divs.length>0){
+				obj.insertBefore(circle,divs[0]);
+			}
+			else{
+				obj.appendChild(circle);
+			}
+ 		}
+ 		else{
+ 			var circle = document.createElement('div');
+ 			if(square==true){
+ 				circle.className = "drawing_square";
+ 			}else{
+ 				circle.className = "drawing_circular";
+ 			}
+ 			
+ 			circle.style.left = x+'px';
+	 		circle.style.top = y+'px';
+			if(divs.length>0){
+				obj.insertBefore(circle,divs[0]);
+			}
+			else{
+				obj.appendChild(circle);
+			}
+ 		}
+ 		
+ 		
+
+		obj.onmousemove=function (ev){
+			var oEvent = ev||event;
+			var div = null;
+			if(oEvent.ctrlKey){
+				if(square==true){
+					div = document.getElementsByClassName('drawing_square2')[0];
+					div.style.borderWidth = all_weight+"px";
+				}else{
+					div = document.getElementsByClassName('drawing_circular2')[0];
+					div.style.borderWidth = all_weight+"px";
+				}
+				div.style.borderColor = color;
+			}else{
+				if(square==true){
+					div = document.getElementsByClassName('drawing_square')[0];
+				}else{
+					div = document.getElementsByClassName('drawing_circular')[0];
+				}
+				
+				div.style.background = color;
+			}
+			var x = oEvent.clientX-div.offsetLeft;
+ 			var y = oEvent.clientY-div.offsetTop;
+ 			
+ 			div.style.width = x+"px";
+ 			// div.style.height = type+"px";
+ 			if(type=="1")
+ 			{
+ 				div.style.height = x+"px";
+ 			}
+ 			else if(type=="2"){
+ 				div.style.height = y+"px";
+ 			}
+		}
+
+		obj.onmouseup=function (){
+			obj.onmousemove = null;
+		}
+}
+</script>
+
+</body></html>
